@@ -1,0 +1,54 @@
+Erster Ansatz:
+	Epochs: 10
+	Trainingszeit: ca eine Stunde, zwischen 7:50 und 6:10 pro Epoch
+	Acc und Dice stark varriierend. Abhscließend sogar fall auf 95.8 - 0.44
+	loss: 0.05
+
+
+	Hyper:
+	Batch: 4
+	Epochs: 10 ins
+	Height: 256
+	Width: 128
+	LR: 1e-4
+
+
+
+
+Zweiter Ansatz: 
+	Epochs: 8
+	Trainingszeit: 7:20 ins, konstant 1:50 pro Epoch
+	Acc: abschließend: 98.09
+	Dice: abschließend: 0.795003
+	loss: 0.263
+
+	Hyper:
+	Batch: 8
+	Epochs: 4 * 2
+	Height: 128
+	Width: 64
+	LR: 1e-5
+
+	weitere 8 epochs sorgten für eine Verbesserung auf: 98.32 - acc
+							    0.83 - dice
+							    0.226 - loss
+	-> Plateau erreicht, wurde nicht sonderlich besser an dieser Stelle
+
+Dritter Ansatz: 
+	Anzahl der Bilder erhöht, data_val beinhaltet DD und CF, damit neue Daten Validiert werden
+	Nicht alle Bilder enthalten, aber größter Teil
+
+	Epochs: 6
+	Trainingszeit: ca 10 bis 12 min
+	Acc: abschließend: 96.89
+	Dice: abschließend: 0.657366 -> stieg nicht wirklich an in den letzten 3 Epochs. Wechsel zwischen 62->64->66->65
+	loss: 0.0327	
+
+	Hyper:
+	Batch: 8
+	Epochs: nach 6 beendet
+	Height: 128
+	Width: 64
+	LR: 1e-4
+
+4. Ansatz, bloß mit viel niedrigerer Augmentation: Dice: 0.80
