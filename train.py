@@ -19,7 +19,7 @@ LEARNING_RATE = 1e-4
 DEVICE = "cpu"#"cuda" if torch.cuda.is_available() else "cpu"
 BATCH_SIZE = 8
 NUM_EPOCHS = 10
-NUM_WORKERS = 1
+NUM_WORKERS = 2
 IMAGE_HEIGHT = 128 #256
 IMAGE_WIDTH = 64 #128
 PIN_MEMORY = False #makes transfer to GPU faster, so unnecessary right now
@@ -111,6 +111,8 @@ def main():
 
     scaler = "No Cuda = no GradScaler"#torch.cuda.amp.GradScaler()
     for epoch in range(NUM_EPOCHS):
+        #check acc
+        #check_accuracy(val_loader, model, device= DEVICE)
         train_fn(train_loader, model, optimizer, loss_fn, scaler)
     
         #save
