@@ -15,15 +15,15 @@ from utils import(
     save_predictions_as_imgs
 )
 #Hyperparameteres etc.
-LEARNING_RATE = 1e-4
-DEVICE = "cpu"#"cuda" if torch.cuda.is_available() else "cpu"
-BATCH_SIZE = 8
-NUM_EPOCHS = 10
+LEARNING_RATE = 1e-3
+DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
+BATCH_SIZE = 4
+NUM_EPOCHS = 25
 NUM_WORKERS = 2
-IMAGE_HEIGHT = 128 #256
-IMAGE_WIDTH = 64 #128
-PIN_MEMORY = False #makes transfer to GPU faster, so unnecessary right now
-LOAD_MODEL = True
+IMAGE_HEIGHT = 512 #256
+IMAGE_WIDTH = 256 #128
+PIN_MEMORY = True #makes transfer to GPU faster, so unnecessary right now
+LOAD_MODEL = False
 TRAIN_IMG_DIR = "data/train_images/"
 TRAIN_MASK_DIR = "data/train_masks/"
 VAL_IMG_DIR = "data/val_images/"
@@ -36,19 +36,29 @@ def train_fn(loader, model, optimizer, loss_fn, scaler):
         data = data.to(device = DEVICE)
         targets = targets.float().unsqueeze(1).to(device=DEVICE)
 
-        #forward
-        #with torch.cuda.amp.autocast(): #torch.autocast(device_type=DEVICE):#torch.cuda.amp.autocast():
-        predictions = model(data)
-        loss = loss_fn(predictions, targets)
-        
-        #backward
-        optimizer.zero_grad()
-        loss.backward() #scaler.scale(loss).backward()
-        optimizer.step() #scaler.step(optimizer)
-        #scaler.update()
+        if(torch.cuda.is_available()):
+            #forward
+            with torch.cuda.amp.autocast():
+                predictions = model(data)
+                loss = loss_fn(predictions, targets)
+            
+            #backward
+            optimizer.zero_grad()
+            scaler.scale(loss).backward()
+            scaler.step(optimizer)
+            scaler.update()
+        else:
+            #forward
+            predictions = model(data)
+            loss = loss_fn(predictions, targets)
+            
+            #backward
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
 
         #update tqdm loop
-        loop.set_postfix(loss= loss.item())
+        loop.set_postfix(loss= loss.item())  
 
 def main():
     train_transform = A.Compose(
@@ -109,10 +119,9 @@ def main():
     if LOAD_MODEL:
         load_checkpoint(torch.load("my_checkpoint.pth.tar"), model)
 
-    scaler = "No Cuda = no GradScaler"#torch.cuda.amp.GradScaler()
+    scaler = torch.cuda.amp.GradScaler()#"No Cuda = no GradScaler"
     for epoch in range(NUM_EPOCHS):
-        #check acc
-        #check_accuracy(val_loader, model, device= DEVICE)
+        
         train_fn(train_loader, model, optimizer, loss_fn, scaler)
     
         #save
