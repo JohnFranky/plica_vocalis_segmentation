@@ -36,7 +36,7 @@ def train_fn(loader, model, optimizer, loss_fn, scaler):
         data = data.to(device = DEVICE)
         targets = targets.float().unsqueeze(1).to(device=DEVICE)
 
-        if(torch.cuda.is_available()):
+        if(DEVICE == "cuda"):
             #forward
             with torch.cuda.amp.autocast():
                 predictions = model(data)
@@ -119,7 +119,11 @@ def main():
     if LOAD_MODEL:
         load_checkpoint(torch.load("my_checkpoint.pth.tar"), model)
 
-    scaler = torch.cuda.amp.GradScaler()#"No Cuda = no GradScaler"
+    if DEVICE == "cuda":
+        scaler = torch.cuda.amp.GradScaler()
+    else:
+        scaler = "No Cuda = no GradScaler"
+
     for epoch in range(NUM_EPOCHS):
         
         train_fn(train_loader, model, optimizer, loss_fn, scaler)
@@ -140,4 +144,5 @@ def main():
         )  
 
 if __name__ == "__main__":
+    #torch.cuda.empty_cache()
     main()
