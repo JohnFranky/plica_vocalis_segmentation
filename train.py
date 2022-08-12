@@ -18,16 +18,16 @@ from utils import(
 LEARNING_RATE = 1e-3
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 BATCH_SIZE = 4
-NUM_EPOCHS = 25
+NUM_EPOCHS = 1
 NUM_WORKERS = 2
 IMAGE_HEIGHT = 512 #256
 IMAGE_WIDTH = 256 #128
 PIN_MEMORY = True #makes transfer to GPU faster, so unnecessary right now
 LOAD_MODEL = False
 TRAIN_IMG_DIR = "data/train_images/"
-TRAIN_MASK_DIR = "data/train_masks/"
+TRAIN_MASK_DIR = "data/train_masks/all_4"#/vocalis_2"
 VAL_IMG_DIR = "data/val_images/"
-VAL_MASK_DIR = "data/val_masks/"
+VAL_MASK_DIR = "data/val_masks/all_4"#/vocalis_2"
 
 def train_fn(loader, model, optimizer, loss_fn, scaler):
     loop = tqdm(loader)
@@ -35,12 +35,11 @@ def train_fn(loader, model, optimizer, loss_fn, scaler):
     for batch_idx, (data, targets) in enumerate(loop):
         data = data.to(device = DEVICE)
         targets = targets.float().unsqueeze(1).to(device=DEVICE)
-
         if(DEVICE == "cuda"):
             #forward
             with torch.cuda.amp.autocast():
                 predictions = model(data)
-                loss = loss_fn(predictions, targets)
+                loss = loss_fn(predictions, targets.squeeze().long())
             
             #backward
             optimizer.zero_grad()
@@ -90,8 +89,8 @@ def main():
     #train_transform = None
     #val_transform = None
 
-    model = UNET(in_channels=3, out_channels=1).to(DEVICE) #here out=x for more classes
-    loss_fn = nn.BCEWithLogitsLoss() #and then cross entropy
+    model = UNET(in_channels=3, out_channels=4).to(DEVICE) #here out=x for more classes, was 1 to begin with
+    loss_fn = nn.CrossEntropyLoss()     #-- at this point add nn.BCEWithLogitsLoss() for working single class
     optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE)
 
     train_loader, val_loader = get_loaders(

@@ -19,7 +19,7 @@ class DoubleConv(nn.Module):
         return self.conv(x)
 class UNET(nn.Module):
     def __init__(
-        self, in_channels=3, out_channels=1, features=[64,128,256,512],
+        self, in_channels=3, out_channels=4, features=[64,128,256,512], #changed out_channels to 3
     ):
         super(UNET, self).__init__()
         self.downs = nn.ModuleList()
@@ -40,7 +40,7 @@ class UNET(nn.Module):
             self.ups.append(DoubleConv(feature*2,feature))
         
         self.bottleneck = DoubleConv(features[-1], features[-1]*2)
-        self.final_conv = nn.Conv2d(features[0], out_channels,kernel_size=1)
+        self.final_conv = nn.Conv2d(features[0], out_channels,kernel_size=1)    #softmax somewhere here? Acutually neither sigmoid nor softmax in this place. Activation layer is somewhere else
     
     def forward(self, x):
         skip_connections = []
