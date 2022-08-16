@@ -23,7 +23,7 @@ NUM_WORKERS = 2
 IMAGE_HEIGHT = 512 #256
 IMAGE_WIDTH = 256 #128
 PIN_MEMORY = True #makes transfer to GPU faster, so unnecessary right now
-LOAD_MODEL = False
+LOAD_MODEL = True
 TRAIN_IMG_DIR = "data/train_images/"
 TRAIN_MASK_DIR = "data/train_masks/all_4"#/vocalis_2"
 VAL_IMG_DIR = "data/val_images/"
@@ -134,14 +134,14 @@ def main():
         }
         save_checkpoint(checkpoint)
 
-        #check acc
+            #check acc
         check_accuracy(val_loader, model, device= DEVICE)
 
-        #print
-        save_predictions_as_imgs(
-            val_loader, model, folder="saved_images/", device=DEVICE
-        )  
+            #print
+        if epoch % 5 == 0:
+            save_predictions_as_imgs(
+                val_loader, model, folder="saved_images/", device=DEVICE
+            )  
 
 if __name__ == "__main__":
-    #torch.cuda.empty_cache()
     main()
