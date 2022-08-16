@@ -62,10 +62,16 @@ def train_fn(loader, model, optimizer, loss_fn, scaler):
 def main():
     train_transform = A.Compose(
         [
+            # TODO:
+            # helligkeit und affine translation und optical distortion
+            # val set flippen, skript
+            # -> analyse spekulare reflektionen, wie lange (Frames), Eingangsdaten vergrößern-> "Mehrere auf einmal", laserpunkte aus m mittel || optical flow || temporales backfeeding
+            # präsi
             A.Resize(height=IMAGE_HEIGHT, width=IMAGE_WIDTH),
             A.Rotate(limit=35, p=0.65), #1.0
             A.HorizontalFlip(p=0.35), #0.5
             A.VerticalFlip(p=0.1), #0.1
+            A.RandomBrightnessContrast(p=0.2),
             A.Normalize(
                 mean=[0.0, 0.0, 0.0],
                 std=[1.0, 1.0, 1.0],
