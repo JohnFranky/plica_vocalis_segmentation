@@ -1,3 +1,14 @@
+"""
+TODO:
+-> analyse spekulare reflektionen, wie lange (Frames), Eingangsdaten vergrößern-> "Mehrere auf einmal", laserpunkte aus m mittel || optical flow || temporales backfeeding
+präsi
+Done:
+Skript for flipping sets
+introduction to new albumentation commands
+Check helligkeit und affine translation und optical distortion
+
+"""
+
 import torch
 import albumentations as A
 from albumentations.pytorch import ToTensorV2
@@ -18,12 +29,12 @@ from utils import(
 LEARNING_RATE = 1e-3
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 BATCH_SIZE = 4
-NUM_EPOCHS = 1
+NUM_EPOCHS = 25
 NUM_WORKERS = 2
 IMAGE_HEIGHT = 512 #256
 IMAGE_WIDTH = 256 #128
 PIN_MEMORY = True #makes transfer to GPU faster, so unnecessary right now
-LOAD_MODEL = True
+LOAD_MODEL = False
 TRAIN_IMG_DIR = "data/train_images/"
 TRAIN_MASK_DIR = "data/train_masks/all_4"#/vocalis_2"
 VAL_IMG_DIR = "data/val_images/"
@@ -62,16 +73,13 @@ def train_fn(loader, model, optimizer, loss_fn, scaler):
 def main():
     train_transform = A.Compose(
         [
-            # TODO:
-            # helligkeit und affine translation und optical distortion
-            # val set flippen, skript
-            # -> analyse spekulare reflektionen, wie lange (Frames), Eingangsdaten vergrößern-> "Mehrere auf einmal", laserpunkte aus m mittel || optical flow || temporales backfeeding
-            # präsi
             A.Resize(height=IMAGE_HEIGHT, width=IMAGE_WIDTH),
-            A.Rotate(limit=35, p=0.65), #1.0
-            A.HorizontalFlip(p=0.35), #0.5
-            A.VerticalFlip(p=0.1), #0.1
-            A.RandomBrightnessContrast(p=0.2),
+            #A.Affine(translate_percent = 0.1,p = 0.25), #This leads to errors in combination with others
+            A.OpticalDistortion(border_mode = cv2.BORDER_CONSTANT, shift_limit=0.7, distort_limit = 0.7, p = 0.5), #also play with shift_limit = 0.05 or distort_limit = 0.05
+            A.Rotate(limit=60,border_mode = cv2.BORDER_CONSTANT, p=0.5), #Border Mode Constant for not duplicating the plica vocalis
+            A.HorizontalFlip(p=0.5), #0.5
+            A.VerticalFlip(p=0.25), #0.1
+            A.RandomBrightnessContrast(contrast_limit = [-0.10, 0.6],p=0.5), #More in pos than neg, as brigther images are more possible to solve
             A.Normalize(
                 mean=[0.0, 0.0, 0.0],
                 std=[1.0, 1.0, 1.0],
@@ -140,11 +148,12 @@ def main():
         }
         save_checkpoint(checkpoint)
 
-            #check acc
-        check_accuracy(val_loader, model, device= DEVICE)
+        #check acc
+        if epoch % 5 == 0 and epoch != 0:
+            check_accuracy(val_loader, model, device= DEVICE)
 
-            #print
-        if epoch % 5 == 0:
+        #print
+        if epoch  == NUM_EPOCHS - 1:
             save_predictions_as_imgs(
                 val_loader, model, folder="saved_images/", device=DEVICE
             )  
