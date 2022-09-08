@@ -66,6 +66,64 @@ def afterColor(img):
     return result
 
 
+def checkNeighbours(list, masks, preds):
+    i = list[0]
+    x = list[1]
+    y = list[2]
+
+    masks[i][x][y] = 2
+    counter = 0
+    if(preds[i][x+1][y] == 1):
+        counter+=1
+    elif(preds[i][x-1][y] == 1):
+        counter+=1
+    elif(preds[i][x][y+1] == 1):
+        counter+=1
+    elif(preds[i][x][y-1] == 1):
+        counter+=1
+    elif(preds[i][x][y] == 1):
+        counter+=1
+    if counter > 0:
+        masks = setNeighbours([i,x,y], masks)
+        return True
+    else:
+        if masks[i][x+1][y] == 1:
+            c =  checkNeighbours([i,x+1,y], masks,preds)
+            if c:
+                return c
+        if masks[i][x-1][y] == 1:
+            c =  checkNeighbours([i,x-1,y], masks,preds)
+            if c:
+                return c
+        if masks[i][x][y+1] == 1:
+            c =  checkNeighbours([i,x,y+1], masks,preds)
+            if c:
+                return c
+        if masks[i][x][y-1] == 1:
+            c =  checkNeighbours([i,x,y-1], masks,preds)
+            if c:
+                return c
+        return False
+
+
+def setNeighbours(list, masks):
+    i = list[0]
+    x = list[1]
+    y = list[2]
+
+    masks[i][x][y] = 0
+    if masks[i][x+1][y] == 1 or masks[i][x+1][y] == 2:
+        masks = setNeighbours([i,x+1,y], masks)
+    if masks[i][x-1][y] == 1 or masks[i][x-1][y] == 2:
+        masks = setNeighbours([i,x-1,y], masks)
+    if masks[i][x][y+1] == 1 or masks[i][x][y+1] == 2:
+        masks = setNeighbours([i,x,y+1], masks)
+    if masks[i][x][y-1] == 1 or masks[i][x][y-1] == 2:
+        masks = setNeighbours([i,x,y-1], masks)
+    return masks
+
+
+
 def refiningSoftmax(preds, color=False):
     preds = preds.cpu().numpy()
     new_preds = []
@@ -85,6 +143,33 @@ def refiningSoftmax(preds, color=False):
     new_preds = torch.from_numpy(new_preds)
     return new_preds
 
+def refine(laserMask, laserPred):
+    masks = laserMask.cpu().numpy()
+    preds = laserPred.cpu().numpy()
+    hitCounter = 0
+    totalCounter = 0
+    result = 1.0
+    for i in range (0, len(preds)):
+        for x in range(0, 512):
+            for y in range(0, 256):
+                if(masks[i][x][y] == 1):
+                    totalCounter += 1
+                    c = checkNeighbours([i,x,y], masks, preds)
+                    if c:
+                        hitCounter += 1
+                        #masks = v
+                    
+                    y+=3
+        """
+        for x in range(0, 512):
+            for y in range(0, 256):
+                if(masks[i][x][y] == 1 or masks[i][x][y] == 2):
+                    totalCounter += 1
+                    masks = setNeighbours([i,x,y], laserMask)
+        """
+    result = hitCounter/totalCounter
+    return result 
+
 def check_accuracy(loader, model, device="cpu"):
     print("#######################")
     print("initiate accuarcy_check")
@@ -94,12 +179,8 @@ def check_accuracy(loader, model, device="cpu"):
     dice_score_glottis1 = 0
     dice_score_vocalis2 = 0
     dice_score_laserdots3 = 0
+    hit_chance_laser = -1.0
     model.eval()
-    """
-    ideas
-
-    np.unique(y) should return (0,1,2,3)
-    """
 
     if BINARY:
         with torch.no_grad():
@@ -119,11 +200,13 @@ def check_accuracy(loader, model, device="cpu"):
             number = 0
             final = len(loader)
             for img, mask in loader:
+                number +=1
+                #if(number > final/2):
+                #    break
                 if number%5 == 0:
                     print("Working on pic "+ str(number) +" / " +str(final))
                 # Getting the results
 
-                number +=1
                 img = img.to(device)
                 mask = mask.to(device)
                 preds = torch.softmax(model(img), 1)
@@ -152,11 +235,18 @@ def check_accuracy(loader, model, device="cpu"):
                 dice_score_vocalis2 += (2 * (vocalisPred * vocalisMask).sum()) / ((vocalisPred + vocalisMask).sum() + 1e-8)
                 dice_score_laserdots3 += (2 * (laserPred * laserMask).sum()) / ((laserPred + laserMask).sum() + 1e-8)
 
+                zwiSave = refine(laserMask, laserPred)
+                if hit_chance_laser == -1.0:
+                    hit_chance_laser = zwiSave
+                else:
+                    hit_chance_laser = (zwiSave + hit_chance_laser)/2
+
         print(f"Got {num_correct}/{num_pixels} with acc {num_correct/num_pixels*100:.2f}")
 
-        print(f"Dice score for the glottis segmentation: {dice_score_glottis1/len(loader)}")
-        print(f"Dice score for the vocalis segmentation: {dice_score_vocalis2/len(loader)}")
-        print(f"Dice score for the laserdots segmentation: {dice_score_laserdots3/len(loader)}")
+        print(f"Dice score for the glottis segmentation: {dice_score_glottis1/(len(loader))}")
+        print(f"Dice score for the vocalis segmentation: {dice_score_vocalis2/(len(loader))}")
+        print(f"Dice score for the laserdots segmentation: {dice_score_laserdots3/(len(loader))}")
+        print(f"Laserdots Hit Chance: {hit_chance_laser}")
     print("#######################")
     model.train()
 

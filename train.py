@@ -29,12 +29,12 @@ from utils import(
 LEARNING_RATE = 1e-3
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 BATCH_SIZE = 4
-NUM_EPOCHS = 25
+NUM_EPOCHS = 50
 NUM_WORKERS = 2
-IMAGE_HEIGHT = 512 #256
-IMAGE_WIDTH = 256 #128
-PIN_MEMORY = True #makes transfer to GPU faster, so unnecessary right now
-LOAD_MODEL = False
+IMAGE_HEIGHT = 512 
+IMAGE_WIDTH = 256 
+PIN_MEMORY = True 
+LOAD_MODEL = True
 TRAIN_IMG_DIR = "data/train_images/"
 TRAIN_MASK_DIR = "data/train_masks/all_4"#/vocalis_2"
 VAL_IMG_DIR = "data/val_images/"
@@ -137,6 +137,7 @@ def main():
     else:
         scaler = "No Cuda = no GradScaler"
 
+    check_accuracy(val_loader, model, device= DEVICE)
     for epoch in range(NUM_EPOCHS):
         
         train_fn(train_loader, model, optimizer, loss_fn, scaler)
