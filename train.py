@@ -1,19 +1,9 @@
-"""
-TODO:
--> analyse spekulare reflektionen, wie lange (Frames), Eingangsdaten vergrößern-> "Mehrere auf einmal", laserpunkte aus m mittel || optical flow || temporales backfeeding
-präsi
-Done:
-Skript for flipping sets
-introduction to new albumentation commands
-Check helligkeit und affine translation und optical distortion
-
-"""
-
 import torch
 import albumentations as A
 from albumentations.pytorch import ToTensorV2
 from tqdm import tqdm
 import cv2
+from PIL import Image
 import numpy as np
 import torch.nn as nn
 import torch.optim as optim
@@ -26,7 +16,7 @@ from utils import(
     save_predictions_as_imgs
 )
 #Hyperparameteres etc.
-LEARNING_RATE = 1e-3
+LEARNING_RATE = 1e-4
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 BATCH_SIZE = 4
 NUM_EPOCHS = 50
@@ -34,18 +24,26 @@ NUM_WORKERS = 2
 IMAGE_HEIGHT = 512 
 IMAGE_WIDTH = 256 
 PIN_MEMORY = True 
-LOAD_MODEL = True
+LOAD_MODEL = False
 TRAIN_IMG_DIR = "data/train_images/"
 TRAIN_MASK_DIR = "data/train_masks/all_4"#/vocalis_2"
 VAL_IMG_DIR = "data/val_images/"
 VAL_MASK_DIR = "data/val_masks/all_4"#/vocalis_2"
 
-def train_fn(loader, model, optimizer, loss_fn, scaler):
+def train_fn(loader, model, optimizer, loss_fn, scaler, first_iterartion, list):
     loop = tqdm(loader)
 
     for batch_idx, (data, targets) in enumerate(loop):
         data = data.to(device = DEVICE)
         targets = targets.float().unsqueeze(1).to(device=DEVICE)
+        if first_iterartion and batch_idx >= len(list):
+            list.append(torch.zeros(len(data),4,512,256))
+
+        preds = list[batch_idx].to("cuda")
+        data = torch.cat((data,preds), 1)
+        """
+        immer konkatenieren amcht keinen sinn, save notwendig? Meh, aber ja eig schon
+        """
         if(DEVICE == "cuda"):
             #forward
             with torch.cuda.amp.autocast():
@@ -66,6 +64,9 @@ def train_fn(loader, model, optimizer, loss_fn, scaler):
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
+        
+        #feedback_loop
+        list[batch_idx] = predictions.detach_()
 
         #update tqdm loop
         loop.set_postfix(loss= loss.item())  
@@ -100,10 +101,24 @@ def main():
             ToTensorV2(),
         ],
     )
-    #train_transform = None
-    #val_transform = None
 
-    model = UNET(in_channels=3, out_channels=4).to(DEVICE) #here out=x for more classes, was 1 to begin with
+    """
+    brightness_transform = A.Compose(
+        [
+            A.RandomBrightnessContrast(contrast_limit = [-6.0, 6.0],p=1.0), #[-0.10, 0.6],p=0.5), #More in pos than neg, as brigther images are more possible to solve
+            A.Resize(height=IMAGE_HEIGHT, width=IMAGE_WIDTH),
+            A.Normalize(
+                mean=[0.0, 0.0, 0.0],
+                std=[1.0, 1.0, 1.0],
+                max_pixel_value=255.0,
+            ),
+            ToTensorV2(),
+        ],
+    )
+    """
+
+
+    model = UNET(in_channels=7, out_channels=4).to(DEVICE) #here out=x for more classes, was 1 to begin with
     loss_fn = nn.CrossEntropyLoss()     #-- at this point add nn.BCEWithLogitsLoss() for working single class
     optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE)
 
@@ -118,15 +133,21 @@ def main():
     )
     
     # Visualisation of the data augmentation:
-    """
-    for i in range(1, 10):
+    
+    for i in range(0, 10):
         example = train_loader.dataset[i]
-        img = example[0].cpu().detach().numpy()
-        mask = example[1].cpu().detach().numpy()
-        cv2.imshow("Example", img[0])
-        cv2.imshow("ExampleMask", mask)
-        cv2.waitKey(0)
-    """
+        image = example[0]
+        mask = example[1]
+        img_np = image.cpu().detach().numpy()
+        mask_np = mask.cpu().detach().numpy()
+        cv2.imwrite("Example0.png", (img_np[0]*255).astype(np.uint8))
+        cv2.imwrite("Example1.png", (img_np[1]*255).astype(np.uint8))
+        cv2.imwrite("Example2.png", (img_np[2]*255).astype(np.uint8))
+        cv2.imwrite("ExampleMask2.png", cv2.equalizeHist(mask_np.astype(np.uint8)))
+    
+    
+    
+    
     
 
     if LOAD_MODEL:
@@ -136,11 +157,24 @@ def main():
         scaler = torch.cuda.amp.GradScaler()
     else:
         scaler = "No Cuda = no GradScaler"
+    
+    predictions = []
+    empty = []
+    for i in range(0, len(train_loader)-1):
+        predictions.append((torch.zeros(4,4,512,256)))
+        if(i < (len(val_loader)-1)):
+            empty.append((torch.zeros(4,4,512,256)))
+    #predictions = np.array(predictions)
 
-    check_accuracy(val_loader, model, device= DEVICE)
+
+    #check_accuracy(val_loader, model, device= DEVICE, list=empty)
     for epoch in range(NUM_EPOCHS):
+        if epoch == 0:
+            first_iterartion = True
+        else:
+            first_iterartion = False
         
-        train_fn(train_loader, model, optimizer, loss_fn, scaler)
+        train_fn(train_loader, model, optimizer, loss_fn, scaler, first_iterartion, predictions)
     
         #save
         checkpoint = {
@@ -150,13 +184,13 @@ def main():
         save_checkpoint(checkpoint)
 
         #check acc
-        if epoch % 5 == 0 and epoch != 0:
-            check_accuracy(val_loader, model, device= DEVICE)
+        if epoch % 10 == 0 and epoch != 0:
+            check_accuracy(val_loader, model, device= DEVICE, list=empty)
 
         #print
         if epoch  == NUM_EPOCHS - 1:
             save_predictions_as_imgs(
-                val_loader, model, folder="saved_images/", device=DEVICE
+                val_loader, model, folder="saved_images/", device=DEVICE, list=empty
             )  
 
 if __name__ == "__main__":
