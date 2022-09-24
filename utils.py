@@ -190,7 +190,7 @@ def refine(laserMask, laserPred):
     result = hitCounter/totalCounter
     return result 
 
-def check_accuracy(loader, model, device="cpu", list = None):
+def check_accuracy(loader, model, device="cpu"):
     print("#######################")
     print("initiate accuarcy_check")
     num_correct = 0
@@ -220,6 +220,7 @@ def check_accuracy(loader, model, device="cpu", list = None):
             with torch.no_grad():
                 number = -1
                 final = len(loader)
+                preds = torch.zeros(4,4,512,256)
                 for img, mask in loader:
                     number +=1
                     if number%5 == 0:
@@ -228,9 +229,9 @@ def check_accuracy(loader, model, device="cpu", list = None):
 
                     img = img.to(device)
                     mask = mask.to(device)
-                    if number >= len(loader)-1 and len(list) < len(loader):
-                        list.append(torch.zeros(len(img),4,512,256))
-                    preds = list[number].to("cuda")
+                    if number >= len(loader)-1:
+                        preds = torch.zeros(len(img),4,512,256)
+                    preds = preds.to(device)
                     img = torch.cat((img,preds), 1)
                     preds = torch.softmax(model(img), 1)
                     new_preds = refiningSoftmax(preds)
@@ -340,7 +341,7 @@ def check_accuracy(loader, model, device="cpu", list = None):
     print("#######################")
     model.train()
 
-def save_predictions_as_imgs(loader, model, folder="saved_images/", device="cpu", list=None):
+def save_predictions_as_imgs(loader, model, folder="saved_images/", device="cpu"):
     print("#######################")
     print("initiate saving_img")
     if BINARY:
@@ -356,14 +357,15 @@ def save_predictions_as_imgs(loader, model, folder="saved_images/", device="cpu"
         model.train()
     else:
         model.eval()
+        preds = torch.zeros(4,4,512,256)
         for idx, (x,y) in enumerate(loader):
             if idx%5 == 0:
                     print("Working on pic "+ str(idx) +" / " +str(len(loader)))
             x = x.to(device=device)
             with torch.no_grad():
-                if idx >= len(loader)-1 and len(list) < len(loader):
-                    list.append(torch.zeros(len(x),4,512,256))
-                preds = list[idx].to("cuda")
+                if idx >= len(loader)-1:
+                    preds = torch.zeros(len(x),4,512,256)
+                preds = preds.to(device)
                 x = torch.cat((x,preds), 1)
                 preds = torch.softmax(model(x),1)
                 new_preds = refiningSoftmax(preds, True)

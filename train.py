@@ -30,20 +30,17 @@ TRAIN_MASK_DIR = "data/train_masks/all_4"#/vocalis_2"
 VAL_IMG_DIR = "data/val_images/"
 VAL_MASK_DIR = "data/val_masks/all_4"#/vocalis_2"
 
-def train_fn(loader, model, optimizer, loss_fn, scaler, first_iterartion, list):
+def train_fn(loader, model, optimizer, loss_fn, scaler, first_iterartion):
     loop = tqdm(loader)
+    preds = torch.zeros(4,4,512,256)
 
     for batch_idx, (data, targets) in enumerate(loop):
         data = data.to(device = DEVICE)
         targets = targets.float().unsqueeze(1).to(device=DEVICE)
-        if first_iterartion and batch_idx >= len(list):
-            list.append(torch.zeros(len(data),4,512,256))
-
-        preds = list[batch_idx].to("cuda")
+        if batch_idx >= len(loader)-1:
+            preds = torch.zeros(len(data),4,512,256)
+        preds = preds.to(device = DEVICE)
         data = torch.cat((data,preds), 1)
-        """
-        immer konkatenieren amcht keinen sinn, save notwendig? Meh, aber ja eig schon
-        """
         if(DEVICE == "cuda"):
             #forward
             with torch.cuda.amp.autocast():
@@ -64,9 +61,9 @@ def train_fn(loader, model, optimizer, loss_fn, scaler, first_iterartion, list):
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
+        preds = predictions.detach_()
         
-        #feedback_loop
-        list[batch_idx] = predictions.detach_()
+
 
         #update tqdm loop
         loop.set_postfix(loss= loss.item())  
@@ -158,13 +155,6 @@ def main():
     else:
         scaler = "No Cuda = no GradScaler"
     
-    predictions = []
-    empty = []
-    for i in range(0, len(train_loader)-1):
-        predictions.append((torch.zeros(4,4,512,256)))
-        if(i < (len(val_loader)-1)):
-            empty.append((torch.zeros(4,4,512,256)))
-    #predictions = np.array(predictions)
 
 
     #check_accuracy(val_loader, model, device= DEVICE, list=empty)
@@ -174,7 +164,7 @@ def main():
         else:
             first_iterartion = False
         
-        train_fn(train_loader, model, optimizer, loss_fn, scaler, first_iterartion, predictions)
+        train_fn(train_loader, model, optimizer, loss_fn, scaler, first_iterartion)
     
         #save
         checkpoint = {
@@ -185,12 +175,12 @@ def main():
 
         #check acc
         if epoch % 10 == 0 and epoch != 0:
-            check_accuracy(val_loader, model, device= DEVICE, list=empty)
+            check_accuracy(val_loader, model, device= DEVICE)
 
         #print
         if epoch  == NUM_EPOCHS - 1:
             save_predictions_as_imgs(
-                val_loader, model, folder="saved_images/", device=DEVICE, list=empty
+                val_loader, model, folder="saved_images/", device=DEVICE
             )  
 
 if __name__ == "__main__":
