@@ -30,17 +30,12 @@ TRAIN_MASK_DIR = "data/train_masks/all_4"#/vocalis_2"
 VAL_IMG_DIR = "data/val_images/"
 VAL_MASK_DIR = "data/val_masks/all_4"#/vocalis_2"
 
-def train_fn(loader, model, optimizer, loss_fn, scaler, first_iterartion):
+def train_fn(loader, model, optimizer, loss_fn, scaler):
     loop = tqdm(loader)
-    preds = torch.zeros(4,4,512,256)
 
     for batch_idx, (data, targets) in enumerate(loop):
         data = data.to(device = DEVICE)
         targets = targets.float().unsqueeze(1).to(device=DEVICE)
-        if batch_idx >= len(loader)-1:
-            preds = torch.zeros(len(data),4,512,256)
-        preds = preds.to(device = DEVICE)
-        data = torch.cat((data,preds), 1)
         if(DEVICE == "cuda"):
             #forward
             with torch.cuda.amp.autocast():
@@ -61,7 +56,6 @@ def train_fn(loader, model, optimizer, loss_fn, scaler, first_iterartion):
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
-        preds = predictions.detach_()
         
 
 
@@ -130,7 +124,7 @@ def main():
     )
     
     # Visualisation of the data augmentation:
-    
+    """
     for i in range(0, 10):
         example = train_loader.dataset[i]
         image = example[0]
@@ -141,6 +135,7 @@ def main():
         cv2.imwrite("Example1.png", (img_np[1]*255).astype(np.uint8))
         cv2.imwrite("Example2.png", (img_np[2]*255).astype(np.uint8))
         cv2.imwrite("ExampleMask2.png", cv2.equalizeHist(mask_np.astype(np.uint8)))
+    """
     
     
     
