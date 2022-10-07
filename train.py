@@ -26,15 +26,21 @@ IMAGE_WIDTH = 256
 PIN_MEMORY = True 
 LOAD_MODEL = False
 TRAIN_IMG_DIR = "data/train_images/"
-TRAIN_MASK_DIR = "data/train_masks/all_4"#/vocalis_2"
+TRAIN_MASK_DIR = "data/train_masks/all_4"
+TRAIN_OPTICALFLOW_DIR = "data/train_opticalflow"
 VAL_IMG_DIR = "data/val_images/"
-VAL_MASK_DIR = "data/val_masks/all_4"#/vocalis_2"
+VAL_MASK_DIR = "data/val_masks/all_4"
+VAL_OPTICALFLOW_DIR = "data/val_opticalflow"
 
 def train_fn(loader, model, optimizer, loss_fn, scaler):
     loop = tqdm(loader)
 
-    for batch_idx, (data, targets) in enumerate(loop):
+    for batch_idx, (data, targets, optflow) in enumerate(loop):
         data = data.to(device = DEVICE)
+        optflow = np.moveaxis(optflow.cpu().numpy(), -1, 1)
+        optflow = torch.from_numpy(optflow)
+        optflow = optflow.to(device = DEVICE)
+        data = data = torch.cat((data,optflow), 1)
         targets = targets.float().unsqueeze(1).to(device=DEVICE)
         if(DEVICE == "cuda"):
             #forward
@@ -109,15 +115,17 @@ def main():
     """
 
 
-    model = UNET(in_channels=7, out_channels=4).to(DEVICE) #here out=x for more classes, was 1 to begin with
+    model = UNET(in_channels=6, out_channels=4).to(DEVICE) #here out=x for more classes, was 1 to begin with
     loss_fn = nn.CrossEntropyLoss()     #-- at this point add nn.BCEWithLogitsLoss() for working single class
     optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE)
 
     train_loader, val_loader = get_loaders(
         TRAIN_IMG_DIR,
         TRAIN_MASK_DIR,
+        TRAIN_OPTICALFLOW_DIR,
         VAL_IMG_DIR,
         VAL_MASK_DIR,
+        VAL_OPTICALFLOW_DIR,
         BATCH_SIZE,
         train_transform,
         val_transform,
@@ -151,15 +159,9 @@ def main():
         scaler = "No Cuda = no GradScaler"
     
 
-
-    #check_accuracy(val_loader, model, device= DEVICE, list=empty)
+    #check_accuracy(val_loader, model, device= DEVICE)
     for epoch in range(NUM_EPOCHS):
-        if epoch == 0:
-            first_iterartion = True
-        else:
-            first_iterartion = False
-        
-        train_fn(train_loader, model, optimizer, loss_fn, scaler, first_iterartion)
+        train_fn(train_loader, model, optimizer, loss_fn, scaler)
     
         #save
         checkpoint = {
@@ -169,14 +171,14 @@ def main():
         save_checkpoint(checkpoint)
 
         #check acc
-        if epoch % 10 == 0 and epoch != 0:
+        if (epoch % 10 == 0 or epoch  == NUM_EPOCHS - 1) and epoch != 0:
             check_accuracy(val_loader, model, device= DEVICE)
 
         #print
-        if epoch  == NUM_EPOCHS - 1:
-            save_predictions_as_imgs(
-                val_loader, model, folder="saved_images/", device=DEVICE
-            )  
+        #if epoch  == NUM_EPOCHS - 1:
+            #save_predictions_as_imgs(
+                #val_loader, model, folder="saved_images/", device=DEVICE
+            #)  
 
 if __name__ == "__main__":
     main()

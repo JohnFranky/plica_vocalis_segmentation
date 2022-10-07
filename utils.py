@@ -19,8 +19,10 @@ def load_checkpoint(checkpoint, model):
 def get_loaders(
     train_dir,
     train_maskdir,
+    train_opticalflowdir,
     val_dir,
     val_maskdir,
+    val_opticalflowdir,
     batch_size,
     train_transform,
     val_transform,
@@ -30,6 +32,7 @@ def get_loaders(
     train_ds = VocDataset(
         image_dir=train_dir,
         mask_dir=train_maskdir,
+        opt_dir=train_opticalflowdir,
         transform=train_transform,
     )
 
@@ -38,12 +41,13 @@ def get_loaders(
         batch_size=batch_size,
         num_workers=num_workers,
         pin_memory=pin_memory,
-        shuffle=False
+        shuffle=True
     )
 
     val_ds = VocDataset(
         image_dir=val_dir,
         mask_dir=val_maskdir,
+        opt_dir=val_opticalflowdir,
         transform=val_transform,
     )
 
@@ -220,8 +224,7 @@ def check_accuracy(loader, model, device="cpu"):
             with torch.no_grad():
                 number = -1
                 final = len(loader)
-                preds = torch.zeros(4,4,512,256)
-                for img, mask in loader:
+                for img, mask, optflow in loader:
                     number +=1
                     if number%5 == 0:
                         print("Working on pic "+ str(number) +" / " +str(final))
@@ -229,10 +232,11 @@ def check_accuracy(loader, model, device="cpu"):
 
                     img = img.to(device)
                     mask = mask.to(device)
-                    if number >= len(loader)-1:
-                        preds = torch.zeros(len(img),4,512,256)
-                    preds = preds.to(device)
-                    img = torch.cat((img,preds), 1)
+                    optflow = np.moveaxis(optflow.cpu().numpy(), -1, 1)
+                    optflow = torch.from_numpy(optflow)
+                    optflow = optflow.to(device)
+
+                    img = torch.cat((img,optflow), 1)
                     preds = torch.softmax(model(img), 1)
                     new_preds = refiningSoftmax(preds)
 
@@ -357,16 +361,15 @@ def save_predictions_as_imgs(loader, model, folder="saved_images/", device="cpu"
         model.train()
     else:
         model.eval()
-        preds = torch.zeros(4,4,512,256)
-        for idx, (x,y) in enumerate(loader):
+        for idx, (x,y,z) in enumerate(loader):
             if idx%5 == 0:
                     print("Working on pic "+ str(idx) +" / " +str(len(loader)))
             x = x.to(device=device)
             with torch.no_grad():
-                if idx >= len(loader)-1:
-                    preds = torch.zeros(len(x),4,512,256)
-                preds = preds.to(device)
-                x = torch.cat((x,preds), 1)
+                optflow = np.moveaxis(z.cpu().numpy(), -1, 1)
+                optflow = torch.from_numpy(optflow)
+                optflow = optflow.to(device)
+                x = torch.cat((x,optflow), 1)
                 preds = torch.softmax(model(x),1)
                 new_preds = refiningSoftmax(preds, True)
                 new_y = []
