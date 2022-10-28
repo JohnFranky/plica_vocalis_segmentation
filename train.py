@@ -24,23 +24,17 @@ NUM_WORKERS = 2
 IMAGE_HEIGHT = 512 
 IMAGE_WIDTH = 256 
 PIN_MEMORY = True 
-LOAD_MODEL = False
+LOAD_MODEL = True
 TRAIN_IMG_DIR = "data/train_images/"
-TRAIN_MASK_DIR = "data/train_masks/all_4"
-TRAIN_OPTICALFLOW_DIR = "data/train_opticalflow"
+TRAIN_MASK_DIR = "data/train_masks/all_4"#/vocalis_2"
 VAL_IMG_DIR = "data/val_images/"
-VAL_MASK_DIR = "data/val_masks/all_4"
-VAL_OPTICALFLOW_DIR = "data/val_opticalflow"
+VAL_MASK_DIR = "data/val_masks/all_4"#/vocalis_2"
 
 def train_fn(loader, model, optimizer, loss_fn, scaler):
     loop = tqdm(loader)
 
-    for batch_idx, (data, targets, optflow) in enumerate(loop):
+    for batch_idx, (data, targets) in enumerate(loop):
         data = data.to(device = DEVICE)
-        optflow = np.moveaxis(optflow.cpu().numpy(), -1, 1)
-        optflow = torch.from_numpy(optflow)
-        optflow = optflow.to(device = DEVICE)
-        data = data = torch.cat((data,optflow), 1)
         targets = targets.float().unsqueeze(1).to(device=DEVICE)
         if(DEVICE == "cuda"):
             #forward
@@ -62,8 +56,6 @@ def train_fn(loader, model, optimizer, loss_fn, scaler):
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
-        
-
 
         #update tqdm loop
         loop.set_postfix(loss= loss.item())  
@@ -115,17 +107,15 @@ def main():
     """
 
 
-    model = UNET(in_channels=6, out_channels=4).to(DEVICE) #here out=x for more classes, was 1 to begin with
+    model = UNET(in_channels=3, out_channels=4).to(DEVICE) #here out=x for more classes, was 1 to begin with
     loss_fn = nn.CrossEntropyLoss()     #-- at this point add nn.BCEWithLogitsLoss() for working single class
     optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE)
 
     train_loader, val_loader = get_loaders(
         TRAIN_IMG_DIR,
         TRAIN_MASK_DIR,
-        TRAIN_OPTICALFLOW_DIR,
         VAL_IMG_DIR,
         VAL_MASK_DIR,
-        VAL_OPTICALFLOW_DIR,
         BATCH_SIZE,
         train_transform,
         val_transform,
@@ -149,7 +139,8 @@ def main():
     
     
     
-
+    
+    print(torch.__version__)
     if LOAD_MODEL:
         load_checkpoint(torch.load("my_checkpoint.pth.tar"), model)
 
@@ -157,10 +148,10 @@ def main():
         scaler = torch.cuda.amp.GradScaler()
     else:
         scaler = "No Cuda = no GradScaler"
-    
 
-    #check_accuracy(val_loader, model, device= DEVICE)
+    check_accuracy(val_loader, model, device= DEVICE)
     for epoch in range(NUM_EPOCHS):
+        
         train_fn(train_loader, model, optimizer, loss_fn, scaler)
     
         #save

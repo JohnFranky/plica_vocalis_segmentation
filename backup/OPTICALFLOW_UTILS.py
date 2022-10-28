@@ -238,6 +238,8 @@ def check_accuracy(loader, model, device="cpu"):
 
                     img = torch.cat((img,optflow), 1)
                     preds = torch.softmax(model(img), 1)
+                    loss = torch.nn.CrossEntropyLoss(preds, mask.squeeze().long())
+                    print(f"Validation loss : {loss}")
                     new_preds = refiningSoftmax(preds)
 
                     # Calculating the right pixels
