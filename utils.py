@@ -6,7 +6,6 @@ from dataset import VocDataset
 from torch.utils.data import DataLoader
 
 BINARY = False
-MULTI_IMAGE_INPUT = False
 
 def save_checkpoint(state, filename="my_checkpoint.pth.tar"):
     print("=> Saving checkpoint")
@@ -19,10 +18,8 @@ def load_checkpoint(checkpoint, model):
 def get_loaders(
     train_dir,
     train_maskdir,
-    train_opticalflowdir,
     val_dir,
     val_maskdir,
-    val_opticalflowdir,
     batch_size,
     train_transform,
     val_transform,
@@ -32,7 +29,6 @@ def get_loaders(
     train_ds = VocDataset(
         image_dir=train_dir,
         mask_dir=train_maskdir,
-        opt_dir=train_opticalflowdir,
         transform=train_transform,
     )
 
@@ -47,7 +43,6 @@ def get_loaders(
     val_ds = VocDataset(
         image_dir=val_dir,
         mask_dir=val_maskdir,
-        opt_dir=val_opticalflowdir,
         transform=val_transform,
     )
 
@@ -130,18 +125,14 @@ def setNeighbours(list, masks):
 
 
 def refiningSoftmax(preds, color=False):
-    #if not MULTI_IMAGE_INPUT:
     preds = preds.cpu().numpy()
     new_preds = []
-    p = 0
     for i in range (0, len(preds)):
         result = np.zeros([512,256])
         for x in range(0, 512):
             for y in range(0, 256):
                 values = [preds[i][0][x][y],preds[i][1][x][y],preds[i][2][x][y],preds[i][3][x][y]]
                 index_max = max(range(len(values)), key=values.__getitem__)
-                if(not index_max == 0):
-                    p += 1
                 result[x][y] = index_max
         if color == True:
             real_result = afterColor(result)
@@ -151,21 +142,6 @@ def refiningSoftmax(preds, color=False):
     new_preds = np.array(new_preds)
     new_preds = torch.from_numpy(new_preds)
     return new_preds
-    """
-    else:
-        preds = preds.cpu().numpy()
-        new_preds = []
-        for i in range(0, len(preds)):
-            #i = len(preds)-1
-            result = np.zeros([512,256])
-            for x in range(0, 512):
-                for y in range(0, 256):
-                    values = [preds[i][0][x][y],preds[i][1][x][y],preds[i][2][x][y],preds[i][3][x][y]]
-                    index_max = max(range(len(values)), key=values.__getitem__)
-                    result[x][y] = index_max
-            new_preds.append(result)
-        return torch.from_numpy(np.array(new_preds))
-    """
 
 def refine(laserMask, laserPred):
     masks = laserMask.cpu().numpy()
@@ -197,6 +173,7 @@ def refine(laserMask, laserPred):
 def check_accuracy(loader, model, device="cpu"):
     print("#######################")
     print("initiate accuarcy_check")
+    loss_fn = torch.nn.CrossEntropyLoss() 
     num_correct = 0
     num_pixels = 0
     dice_score = 0
@@ -206,105 +183,38 @@ def check_accuracy(loader, model, device="cpu"):
     hit_chance_laser = -1.0
     model.eval()
 
-    if not MULTI_IMAGE_INPUT:
-        if BINARY:
-            with torch.no_grad():
-                for img, mask in loader:
-                        img = img.to(device)
-                        mask = mask.to(device).unsqueeze(1)
-                        preds = torch.sigmoid(model(img))
-                        preds = (preds > 0.5).float()
-                        num_correct += (preds == mask).sum()
-                        num_pixels += torch.numel(preds)
-                        dice_score += (2 * (preds * mask).sum()) / ((preds + mask).sum() + 1e-8)
-
-            print(f"Got {num_correct}/{num_pixels} with acc {num_correct/num_pixels*100:.2f}")
-            print(f"Dice score: {dice_score/len(loader)}")
-        else:
-            with torch.no_grad():
-                number = -1
-                final = len(loader)
-                for img, mask, optflow in loader:
-                    number +=1
-                    if number%5 == 0:
-                        print("Working on pic "+ str(number) +" / " +str(final))
-                    # Getting the results
-
+    if BINARY:
+        with torch.no_grad():
+            for img, mask in loader:
                     img = img.to(device)
-                    mask = mask.to(device)
-                    optflow = np.moveaxis(optflow.cpu().numpy(), -1, 1)
-                    optflow = torch.from_numpy(optflow)
-                    optflow = optflow.to(device)
+                    mask = mask.to(device).unsqueeze(1)
+                    preds = torch.sigmoid(model(img))
+                    preds = (preds > 0.5).float()
+                    num_correct += (preds == mask).sum()
+                    num_pixels += torch.numel(preds)
+                    dice_score += (2 * (preds * mask).sum()) / ((preds + mask).sum() + 1e-8)
 
-                    img = torch.cat((img,optflow), 1)
-                    preds = torch.softmax(model(img), 1)
-                    new_preds = refiningSoftmax(preds)
-
-                    # Calculating the right pixels
-
-                    mask = mask.cpu()
-                    num_correct += (new_preds == mask).sum()
-                    num_pixels += torch.numel(new_preds)
-
-                    # Dice Scores
-
-                    zero = torch.zeros_like(mask)
-                    one = torch.ones_like(mask)
-
-                    glottisMask = torch.where(mask != 1, zero, one)
-                    vocalisMask = torch.where(mask != 2, zero, one)
-                    laserMask = torch.where(mask != 3, zero, one)
-
-                    glottisPred = torch.where(new_preds != 1, zero, one)
-                    vocalisPred = torch.where(new_preds != 2, zero, one)
-                    laserPred = torch.where(new_preds != 3, zero, one)
-
-                    dice_score_glottis1 += (2 * (glottisPred * glottisMask).sum()) / ((glottisPred + glottisMask).sum() + 1e-8)
-                    dice_score_vocalis2 += (2 * (vocalisPred * vocalisMask).sum()) / ((vocalisPred + vocalisMask).sum() + 1e-8)
-                    dice_score_laserdots3 += (2 * (laserPred * laserMask).sum()) / ((laserPred + laserMask).sum() + 1e-8)
-
-                    zwiSave = refine(laserMask, laserPred)
-                    if hit_chance_laser == -1.0:
-                        hit_chance_laser = zwiSave
-                    else:
-                        hit_chance_laser = (zwiSave + hit_chance_laser)/2
-
-            print(f"Got {num_correct}/{num_pixels} with acc {num_correct/num_pixels*100:.2f}")
-
-            print(f"Dice score for the glottis segmentation: {dice_score_glottis1/(len(loader))}")
-            print(f"Dice score for the vocalis segmentation: {dice_score_vocalis2/(len(loader))}")
-            print(f"Dice score for the laserdots segmentation: {dice_score_laserdots3/(len(loader))}")
-            print(f"Laserdots Hit Chance: {hit_chance_laser}")
+        print(f"Got {num_correct}/{num_pixels} with acc {num_correct/num_pixels*100:.2f}")
+        print(f"Dice score: {dice_score/len(loader)}")
     else:
         with torch.no_grad():
             number = 0
             final = len(loader)
             for img, mask in loader:
-                img_np = img.cpu().detach().numpy()
-                """
-                mask_np = mask.cpu().detach().numpy()
-                cv2.imwrite("Example0.png", (img_np[0][0]*255).astype(np.uint8))
-                cv2.imwrite("Example1.png", (img_np[1][0]*255).astype(np.uint8))
-                cv2.imwrite("Example2.png", (img_np[2][0]*255).astype(np.uint8))
-                cv2.imwrite("ExampleMask2.png", cv2.equalizeHist(mask_np.astype(np.uint8)))
-                new_img_set = []
-                new_img_set.append(img_np[0][2])
-                new_img_set.append(img_np[1][2])
-                new_img_set.append(img_np[2][2])
-                new_img_set.append(img_np[3][2])
-                new_img_set = np.array(new_img_set)
-                new_img_set = torch.from_numpy(new_img_set)
-                """
                 number +=1
                 #if(number > final/2):
                 #    break
-                if number%5 == 0:
-                    print("Working on pic "+ str(number) +" / " +str(final))
+                #if number%5 == 0:
+                    #print("Working on pic "+ str(number) +" / " +str(final))
                 # Getting the results
 
                 img = img.to(device)
                 mask = mask.to(device)
                 preds = torch.softmax(model(img), 1)
+                loss = loss_fn(preds, mask.squeeze().long())
+                if number%5 == 0:
+                    print("Working on pic "+ str(number) +" / " +str(final))
+                    print(f"Validation loss : {loss}")
                 new_preds = refiningSoftmax(preds)
 
                 # Calculating the right pixels
@@ -336,12 +246,12 @@ def check_accuracy(loader, model, device="cpu"):
                 else:
                     hit_chance_laser = (zwiSave + hit_chance_laser)/2
 
-            print(f"Got {num_correct}/{num_pixels} with acc {num_correct/num_pixels*100:.2f}")
+        print(f"Got {num_correct}/{num_pixels} with acc {num_correct/num_pixels*100:.2f}")
 
-            print(f"Dice score for the glottis segmentation: {dice_score_glottis1/(len(loader))}")
-            print(f"Dice score for the vocalis segmentation: {dice_score_vocalis2/(len(loader))}")
-            print(f"Dice score for the laserdots segmentation: {dice_score_laserdots3/(len(loader))}")
-            print(f"Laserdots Hit Chance: {hit_chance_laser}")
+        print(f"Dice score for the glottis segmentation: {dice_score_glottis1/(len(loader))}")
+        print(f"Dice score for the vocalis segmentation: {dice_score_vocalis2/(len(loader))}")
+        print(f"Dice score for the laserdots segmentation: {dice_score_laserdots3/(len(loader))}")
+        print(f"Laserdots Hit Chance: {hit_chance_laser}")
     print("#######################")
     model.train()
 
@@ -361,15 +271,11 @@ def save_predictions_as_imgs(loader, model, folder="saved_images/", device="cpu"
         model.train()
     else:
         model.eval()
-        for idx, (x,y,z) in enumerate(loader):
+        for idx, (x,y) in enumerate(loader):
             if idx%5 == 0:
                     print("Working on pic "+ str(idx) +" / " +str(len(loader)))
             x = x.to(device=device)
             with torch.no_grad():
-                optflow = np.moveaxis(z.cpu().numpy(), -1, 1)
-                optflow = torch.from_numpy(optflow)
-                optflow = optflow.to(device)
-                x = torch.cat((x,optflow), 1)
                 preds = torch.softmax(model(x),1)
                 new_preds = refiningSoftmax(preds, True)
                 new_y = []

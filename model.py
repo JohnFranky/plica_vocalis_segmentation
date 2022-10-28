@@ -1,4 +1,10 @@
-#from turtle import forward
+"""
+This model and parts of the other python files in this folder (train.py, utils.py, dataset.py) are originally inspired by Aladdin Perssons work
+His work can be found in: https://github.com/aladdinpersson/Machine-Learning-Collection/tree/master/ML/Pytorch/image_segmentation/semantic_segmentation_unet
+
+
+
+"""
 import torch
 import torch.nn as nn
 import torchvision.transforms.functional as TF
