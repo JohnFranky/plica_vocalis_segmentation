@@ -13,13 +13,14 @@ from utils import(
     save_checkpoint,
     get_loaders,
     check_accuracy,
-    save_predictions_as_imgs
+    save_predictions_as_imgs,
+    create_heatmaps
 )
 #Hyperparameteres etc.
 LEARNING_RATE = 1e-4
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 BATCH_SIZE = 4
-NUM_EPOCHS = 50
+NUM_EPOCHS = 100
 NUM_WORKERS = 2
 IMAGE_HEIGHT = 512 
 IMAGE_WIDTH = 256 
@@ -156,9 +157,9 @@ def main():
     else:
         scaler = "No Cuda = no GradScaler"
     
-
-
-    check_accuracy(val_loader, model, device= DEVICE)
+    #create_heatmaps(val_loader, model, device=DEVICE)
+    #save_predictions_as_imgs(val_loader, model, folder="saved_images/", device=DEVICE) 
+    #check_accuracy(val_loader, model, device= DEVICE)
     for epoch in range(NUM_EPOCHS):
         if epoch == 0:
             first_iterartion = True
@@ -175,9 +176,9 @@ def main():
         save_checkpoint(checkpoint)
 
         #check acc
-        check_accuracy(val_loader, model, device= DEVICE)
-        #if (epoch % 10 == 0 or epoch  == NUM_EPOCHS - 1) and epoch != 0:
-            #check_accuracy(val_loader, model, device= DEVICE)
+        #check_accuracy(val_loader, model, device= DEVICE)
+        if (epoch % 10 == 0 or epoch  == NUM_EPOCHS - 1) and epoch != 0:
+            check_accuracy(val_loader, model, device= DEVICE)
 
         #print
         #if epoch  == NUM_EPOCHS - 1:

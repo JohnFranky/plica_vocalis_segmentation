@@ -194,6 +194,7 @@ def check_accuracy(loader, model, device="cpu"):
     print("#######################")
     print("initiate accuarcy_check")
     num_correct = 0
+    loss_fn = torch.nn.CrossEntropyLoss() 
     num_pixels = 0
     dice_score = 0
     dice_score_glottis1 = 0
@@ -223,10 +224,9 @@ def check_accuracy(loader, model, device="cpu"):
                 preds = torch.zeros(4,4,512,256)
                 for img, mask in loader:
                     number +=1
-                    if number%5 == 0:
-                        print("Working on pic "+ str(number) +" / " +str(final))
                     # Getting the results
-
+                    if number > 50:
+                        break
                     img = img.to(device)
                     mask = mask.to(device)
                     if number >= len(loader)-1:
@@ -234,8 +234,10 @@ def check_accuracy(loader, model, device="cpu"):
                     preds = preds.to(device)
                     img = torch.cat((img,preds), 1)
                     preds = torch.softmax(model(img), 1)
-                    loss = torch.nn.CrossEntropyLoss(preds, mask.squeeze().long())
-                    print(f"Validation loss : {loss}")
+                    loss = loss_fn(preds, mask.squeeze().long())
+                    if number%5 == 0:
+                        print("Working on pic "+ str(number) +" / " +str(final))
+                        print(f"Validation loss : {loss}")
                     new_preds = refiningSoftmax(preds)
 
                     # Calculating the right pixels

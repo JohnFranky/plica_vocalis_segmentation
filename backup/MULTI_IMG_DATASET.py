@@ -10,7 +10,7 @@ class VocDataset(Dataset):
         self.mask_dir = mask_dir
         self.transform = transform
         #self.transform_brightness = transform_brightness
-        self.images = os.listdir(image_dir)
+        self.images = sorted(os.listdir(image_dir))
         self.num_images = num_images
     
     def __len__(self):

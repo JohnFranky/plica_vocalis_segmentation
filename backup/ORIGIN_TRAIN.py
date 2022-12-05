@@ -19,7 +19,7 @@ from utils import(
 LEARNING_RATE = 1e-4
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 BATCH_SIZE = 4
-NUM_EPOCHS = 150
+NUM_EPOCHS = 50
 NUM_WORKERS = 2
 IMAGE_HEIGHT = 512 
 IMAGE_WIDTH = 256 
@@ -139,7 +139,8 @@ def main():
     
     
     
-
+    
+    print(torch.__version__)
     if LOAD_MODEL:
         load_checkpoint(torch.load("my_checkpoint.pth.tar"), model)
 
@@ -148,7 +149,7 @@ def main():
     else:
         scaler = "No Cuda = no GradScaler"
 
-    #check_accuracy(val_loader, model, device= DEVICE)
+    check_accuracy(val_loader, model, device= DEVICE)
     for epoch in range(NUM_EPOCHS):
         
         train_fn(train_loader, model, optimizer, loss_fn, scaler)
@@ -161,14 +162,15 @@ def main():
         save_checkpoint(checkpoint)
 
         #check acc
-        if epoch % 10 == 0 and epoch != 0:
-            check_accuracy(val_loader, model, device= DEVICE)
+        check_accuracy(val_loader, model, device= DEVICE)
+        #if (epoch % 10 == 0 or epoch  == NUM_EPOCHS - 1) and epoch != 0:
+            #check_accuracy(val_loader, model, device= DEVICE)
 
         #print
-        if epoch  == NUM_EPOCHS - 1:
-            save_predictions_as_imgs(
-                val_loader, model, folder="saved_images/", device=DEVICE
-            )  
+        #if epoch  == NUM_EPOCHS - 1:
+            #save_predictions_as_imgs(
+                #val_loader, model, folder="saved_images/", device=DEVICE
+            #)  
 
 if __name__ == "__main__":
     main()

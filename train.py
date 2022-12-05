@@ -13,13 +13,14 @@ from utils import(
     save_checkpoint,
     get_loaders,
     check_accuracy,
-    save_predictions_as_imgs
+    save_predictions_as_imgs,
+    create_heatmaps
 )
 #Hyperparameteres etc.
 LEARNING_RATE = 1e-4
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
-BATCH_SIZE = 4
-NUM_EPOCHS = 50
+BATCH_SIZE = 1
+NUM_EPOCHS = 100
 NUM_WORKERS = 2
 IMAGE_HEIGHT = 512 
 IMAGE_WIDTH = 256 
@@ -30,12 +31,17 @@ TRAIN_MASK_DIR = "data/train_masks/all_4"#/vocalis_2"
 VAL_IMG_DIR = "data/val_images/"
 VAL_MASK_DIR = "data/val_masks/all_4"#/vocalis_2"
 
-def train_fn(loader, model, optimizer, loss_fn, scaler):
+def train_fn(loader, model, optimizer, loss_fn, scaler, first_iterartion):
     loop = tqdm(loader)
+    preds = torch.zeros(4,4,512,256)
 
     for batch_idx, (data, targets) in enumerate(loop):
         data = data.to(device = DEVICE)
         targets = targets.float().unsqueeze(1).to(device=DEVICE)
+        if batch_idx >= len(loader)-1:
+            preds = torch.zeros(len(data),4,512,256)
+        preds = preds.to(device = DEVICE)
+        data = torch.cat((data,preds), 1)
         if(DEVICE == "cuda"):
             #forward
             with torch.cuda.amp.autocast():
@@ -56,6 +62,9 @@ def train_fn(loader, model, optimizer, loss_fn, scaler):
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
+        preds = predictions.detach_()
+        
+
 
         #update tqdm loop
         loop.set_postfix(loss= loss.item())  
@@ -107,7 +116,7 @@ def main():
     """
 
 
-    model = UNET(in_channels=3, out_channels=4).to(DEVICE) #here out=x for more classes, was 1 to begin with
+    model = UNET(in_channels=7, out_channels=4).to(DEVICE) #here out=x for more classes, was 1 to begin with
     loss_fn = nn.CrossEntropyLoss()     #-- at this point add nn.BCEWithLogitsLoss() for working single class
     optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE)
 
@@ -139,8 +148,7 @@ def main():
     
     
     
-    
-    print(torch.__version__)
+
     if LOAD_MODEL:
         load_checkpoint(torch.load("my_checkpoint.pth.tar"), model)
 
@@ -148,11 +156,17 @@ def main():
         scaler = torch.cuda.amp.GradScaler()
     else:
         scaler = "No Cuda = no GradScaler"
-
-    check_accuracy(val_loader, model, device= DEVICE)
+    
+    #create_heatmaps(val_loader, model, device=DEVICE)
+    save_predictions_as_imgs(val_loader, model, folder="saved_images/", device=DEVICE) 
+    #check_accuracy(val_loader, model, device= DEVICE)
     for epoch in range(NUM_EPOCHS):
+        if epoch == 0:
+            first_iterartion = True
+        else:
+            first_iterartion = False
         
-        train_fn(train_loader, model, optimizer, loss_fn, scaler)
+        train_fn(train_loader, model, optimizer, loss_fn, scaler, first_iterartion)
     
         #save
         checkpoint = {
@@ -162,6 +176,7 @@ def main():
         save_checkpoint(checkpoint)
 
         #check acc
+        #check_accuracy(val_loader, model, device= DEVICE)
         if (epoch % 10 == 0 or epoch  == NUM_EPOCHS - 1) and epoch != 0:
             check_accuracy(val_loader, model, device= DEVICE)
 
@@ -169,7 +184,7 @@ def main():
         #if epoch  == NUM_EPOCHS - 1:
             #save_predictions_as_imgs(
                 #val_loader, model, folder="saved_images/", device=DEVICE
-            #)  
+            #)   
 
 if __name__ == "__main__":
     main()
