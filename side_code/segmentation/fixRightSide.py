@@ -6,7 +6,7 @@ if __name__ == "__main__":
     FrameNumberStart = 1
     FrameNumberEnd = 350 #number of last frame included
 
-    path = r"E:\Eigene Dateien Jonathan\studium\Letztes_Semester\Bachlor\HLE_Dataset\DD"
+    path = r"E:\_\HLE_Dataset\DD"
 
 
     result_path = r"\Segmentation" + r"\plica_vocalis"

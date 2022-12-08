@@ -19,8 +19,8 @@ def flow2img(flow, BGR=True):
 	return img
 
 startT = time.perf_counter()
-im1 = cv2.imread(r"E:\Eigene Dateien Jonathan\studium\6. Semester\Bachlor\HLE_Dataset\CF\png\00001CF.png")
-im2 = cv2.imread(r"E:\Eigene Dateien Jonathan\studium\6. Semester\Bachlor\HLE_Dataset\CF\png\00002CF.png")
+im1 = cv2.imread(r"_\HLE_Dataset\CF\png\00001CF.png")
+im2 = cv2.imread(r"_\HLE_Dataset\CF\png\00002CF.png")
 gray1 = cv2.cvtColor(im1, cv2.COLOR_BGR2GRAY)
 gray2 = cv2.cvtColor(im2, cv2.COLOR_BGR2GRAY)
 
@@ -55,7 +55,7 @@ flowDeep = deepF.calc(gray1, gray2, None)
 flows.append(flow2img(flowDeep, False))
 endT = time.perf_counter()
 print(endT - startT, "s")
-#cv2.optflow.writeOpticalFlow(r"E:\Eigene Dateien Jonathan\studium\6. Semester\Bachlor\Segmentation\dp.flo", flowDeep)
+#cv2.optflow.writeOpticalFlow(r"_\Segmentation\dp.flo", flowDeep)
 
 fig, axes = plt.subplots((len(flows) + 2) // 3, 3)
 for i in range(axes.size):

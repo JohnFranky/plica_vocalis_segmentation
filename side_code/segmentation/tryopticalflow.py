@@ -182,7 +182,7 @@ if __name__ == "__main__":
     images = os.listdir(path)
 
     # ignore that use own frames
-    #cap = cv.VideoCapture(cv.samples.findFile(r"E:\Eigene Dateien Jonathan\studium\6. Semester\Bachlor\HLE_Dataset\CF\2_9500_10200.avi"))
+    #cap = cv.VideoCapture(cv.samples.findFile(r"_\HLE_Dataset\CF\2_9500_10200.avi"))
     #ret, frame1 = cap.read()
 
     counter = 0

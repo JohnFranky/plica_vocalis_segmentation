@@ -13,7 +13,7 @@ def sharpen_image(path):
     #cv2.imshow('Sharp', image_sharp)
     #cv2.waitKey()
     #cv2.destroyAllWindows()
-    save_path = r"E:\Eigene Dateien Jonathan\studium\Letztes_Semester\Bachlor\Segmentation\sharpened.png"
+    save_path = r"_\Bachlor\Segmentation\sharpened.png"
     result=cv2.imwrite(save_path, image_sharp)
     return save_path
 
@@ -35,7 +35,7 @@ def Filter_Shiny(path):
     #cv2.imshow("Original", image)
     #cv2.imshow("blurr", thresh)
     #cv2.waitKey(0)
-    save_path = r"E:\Eigene Dateien Jonathan\studium\Letztes_Semester\Bachlor\Segmentation\blurred.png"
+    save_path = r"E:_\Segmentation\blurred.png"
     result=cv2.imwrite(save_path, blurredMedian)
     return save_path
 
@@ -104,7 +104,7 @@ def alternateSeedPoints(snake_path, first_img_path, FrameNumberInt, offsetShiny,
     
     return lengthlist
 """
-path = r"E:\Eigene Dateien Jonathan\studium\6. Semester\Bachlor\HLE_Dataset\MK"
+path = r"_\HLE_Dataset\MK"
 #test2 = cv2.imread(os.path.join(path, "png","00001MS.png"),0)
 img = edgeDetection(os.path.join(path, "png","00001MK.png"), True)
 cv2.imwrite(os.path.join(path, "Segmentation", "image.png"), img)

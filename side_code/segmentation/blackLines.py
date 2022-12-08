@@ -46,7 +46,7 @@ def createBlackLines(img):
 if __name__ == "__main__":
     Initials = "RH"   
     if(Initials == "RH"):
-        path = r"E:\Eigene Dateien Jonathan\studium\Letztes_Semester\Bachlor\HLE_Dataset\RH"
+        path = r"E:\HLE_Dataset\RH"
         image_path = path + r"\png\\"
         snake_path = path + r"\Segmentation\3_14500-15000\[1-475]" +r"\3_14500-15000[1-475].snake"
         laserdots_path = path + r"\results\laserdots\475.mat"
@@ -57,7 +57,7 @@ if __name__ == "__main__":
         bo = createBlackLines(image)
         #cv2.imshow("SnakeInfo",bo)
         #cv2.waitKey(0)
-        save_path = r"E:\Eigene Dateien Jonathan\studium\Letztes_Semester\Bachlor\HLE_Dataset\RH\Segmentation\blackoutlineImages"
+        save_path = r"E:\HLE_Dataset\RH\Segmentation\blackoutlineImages"
         if(FrameNumberInt < 10):
             FrameNumber = r"000"+str(FrameNumberInt)
         elif(FrameNumberInt < 100):

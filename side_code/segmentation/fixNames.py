@@ -6,7 +6,7 @@ if __name__ == "__main__":
     FrameNumberStart = 1
     FrameNumberEnd = 701 #number of last frame included
 
-    path = r"E:\Eigene Dateien Jonathan\studium\Letztes_Semester\Bachlor\HLE_Dataset\CF"
+    path = r"E:\_\HLE_Dataset\CF"
 
 
     image_path = path + r"\png"

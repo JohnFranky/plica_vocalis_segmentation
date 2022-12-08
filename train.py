@@ -19,13 +19,13 @@ from utils import(
 #Hyperparameteres etc.
 LEARNING_RATE = 1e-4
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
-BATCH_SIZE = 1
+BATCH_SIZE = 4
 NUM_EPOCHS = 100
 NUM_WORKERS = 2
 IMAGE_HEIGHT = 512 
 IMAGE_WIDTH = 256 
 PIN_MEMORY = True 
-LOAD_MODEL = True
+LOAD_MODEL = False
 TRAIN_IMG_DIR = "data/train_images/"
 TRAIN_MASK_DIR = "data/train_masks/all_4"#/vocalis_2"
 VAL_IMG_DIR = "data/val_images/"
@@ -158,7 +158,7 @@ def main():
         scaler = "No Cuda = no GradScaler"
     
     #create_heatmaps(val_loader, model, device=DEVICE)
-    save_predictions_as_imgs(val_loader, model, folder="saved_images/", device=DEVICE) 
+    #save_predictions_as_imgs(val_loader, model, folder="saved_images/", device=DEVICE) 
     #check_accuracy(val_loader, model, device= DEVICE)
     for epoch in range(NUM_EPOCHS):
         if epoch == 0:

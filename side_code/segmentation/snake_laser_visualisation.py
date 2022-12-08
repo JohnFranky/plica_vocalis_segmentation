@@ -156,44 +156,44 @@ if __name__ == "__main__":
     Initials = "TM"   
     anzFrames = 605
     if(Initials == "CF"):
-        path = r"E:\Eigene Dateien Jonathan\studium\6. Semester\Bachlor\HLE_Dataset\CF"
+        path = r"_\HLE_Dataset\CF"
         snake_path = path + r"\Segmentation\2_9500_10200\[1-701]" +r"\2_9500_10200[1-701].snake"
         laserdots_path = path + r"\results\laserdots\701.mat"
     elif(Initials == "CM"):
-        path = r"E:\Eigene Dateien Jonathan\studium\6. Semester\Bachlor\HLE_Dataset\CM"
+        path = r"_\HLE_Dataset\CM"
         snake_path = path + r"\Segmentation\1_200-700\[190-501]" +r"\1_200-700[190-501].snake"
         laserdots_path = path + r"\results\laserdots\312.mat"
     elif(Initials == "DD"):
-        path = r"E:\Eigene Dateien Jonathan\studium\6. Semester\Bachlor\HLE_Dataset\DD"
+        path = r"_\HLE_Dataset\DD"
         snake_path = path + r"\Segmentation\Denis2_15518-16018\[1-350]" +r"\Denis2_15518-16018[1-350].snake"
         laserdots_path = path + r"\results\laserdots\350.mat"
     elif(Initials == "FH"):
-        path = r"E:\Eigene Dateien Jonathan\studium\6. Semester\Bachlor\HLE_Dataset\FH"
+        path = r"_\HLE_Dataset\FH"
         snake_path = path + r"\Segmentation\4_2000-2650\[1-651]" +r"\4_2000-2650[1-651].snake"
         laserdots_path = path + r"\results\laserdots\651.mat"
     elif(Initials == "LS"):
-        path = r"E:\Eigene Dateien Jonathan\studium\6. Semester\Bachlor\HLE_Dataset\LS"
+        path = r"_\HLE_Dataset\LS"
         snake_path = path + r"\Segmentation\3_11500-12000\[1-350]" +r"\3_11500-12000[1-350].snake"
         laserdots_path = path + r"\results\laserdots\350.mat"
     elif(Initials == "MK"):
-        path = r"E:\Eigene Dateien Jonathan\studium\6. Semester\Bachlor\HLE_Dataset\MK"
+        path = r"_\HLE_Dataset\MK"
         snake_path = path + r"\Segmentation\3_14500-15000\[1-475]" +r"\3_14500-15000[1-475].snake"
         laserdots_path = path + r"\results\laserdots\475.mat"
     elif(Initials == "MS"):
-        path = r"E:\Eigene Dateien Jonathan\studium\6. Semester\Bachlor\HLE_Dataset\MS"
+        path = r"_\HLE_Dataset\MS"
         snake_path = path + r"\Segmentation\3_8500-9000\[250-501]" +r"\3_8500-9000[250-501].snake"
         laserdots_path = path + r"\results\laserdots\252.mat"
     elif(Initials == "RH"):
-        path = r"E:\Eigene Dateien Jonathan\studium\6. Semester\Bachlor\HLE_Dataset\RH"
+        path = r"_\HLE_Dataset\RH"
         snake_path = path + r"\Segmentation\2_2500-3000\[1-327]" +r"\2_2500-3000[1-327].snake"
         laserdots_path = path + r"\results\laserdots\327.mat"
     elif(Initials == "SS"):
-        path = r"E:\Eigene Dateien Jonathan\studium\6. Semester\Bachlor\HLE_Dataset\SS"
+        path = r"_\HLE_Dataset\SS"
         snake_path = path + r"\Segmentation\2_2956-3456\[277-501]" +r"\2_2956-3456[277-501].snake"
         laserdots_path = path + r"\results\laserdots\225.mat"
     elif(Initials == "TM"):
         # Warning: TH has two different Segmentation folders!
-        path = r"E:\Eigene Dateien Jonathan\studium\6. Semester\Bachlor\HLE_Dataset\TM"
+        path = r"_\HLE_Dataset\TM"
         snake_path = path + r"\Segmentation\3_6507_7111\[1-605]" +r"\3_6507_7111[1-605].snake"
         laserdots_path = path + r"\results\laserdots\605.mat"
     else:

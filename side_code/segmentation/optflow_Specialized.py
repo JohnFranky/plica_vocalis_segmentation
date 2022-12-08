@@ -7,31 +7,31 @@ import matplotlib.pyplot as plt
 
 def get_path(m):
     if(m == 0):
-        path = r"E:\Eigene Dateien Jonathan\studium\6. Semester\Bachlor\HLE_Dataset\CF"
+        path = r"_\HLE_Dataset\CF"
         anzFrames = 329
     elif(m == 1):
-        path = r"E:\Eigene Dateien Jonathan\studium\6. Semester\Bachlor\HLE_Dataset\CM"
+        path = r"_\HLE_Dataset\CM"
         anzFrames = 311
     elif(m == 2):
-        path = r"E:\Eigene Dateien Jonathan\studium\6. Semester\Bachlor\HLE_Dataset\DD"
+        path = r"_\HLE_Dataset\DD"
         anzFrames = 350
     elif(m == 4):
-        path = r"E:\Eigene Dateien Jonathan\studium\6. Semester\Bachlor\HLE_Dataset\LS"
+        path = r"_\HLE_Dataset\LS"
         anzFrames = 350
     elif(m == 5):
-        path = r"E:\Eigene Dateien Jonathan\studium\6. Semester\Bachlor\HLE_Dataset\MK"
+        path = r"_\HLE_Dataset\MK"
         anzFrames = 474
     elif(m == 6):
-        path = r"E:\Eigene Dateien Jonathan\studium\6. Semester\Bachlor\HLE_Dataset\MS"
+        path = r"_\HLE_Dataset\MS"
         anzFrames = 251
     elif(m == 7):
-        path = r"E:\Eigene Dateien Jonathan\studium\6. Semester\Bachlor\HLE_Dataset\RH"
+        path = r"_\HLE_Dataset\RH"
         anzFrames = 327
     elif(m == 8):
-        path = r"E:\Eigene Dateien Jonathan\studium\6. Semester\Bachlor\HLE_Dataset\SS"
+        path = r"_\HLE_Dataset\SS"
         anzFrames = 225
     elif(m == 9):
-        path = r"E:\Eigene Dateien Jonathan\studium\6. Semester\Bachlor\HLE_Dataset\TM"
+        path = r"_\HLE_Dataset\TM"
         anzFrames = 603
     else:
         path = "error"

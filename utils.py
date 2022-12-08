@@ -208,7 +208,7 @@ def create_heatmaps(loader, model, device="cpu"):
             maps = torch.split(preds, 1, 1)
 
             #for i in range(0,4):
-            x = maps[2]
+            x = maps[3]
             minimaps = torch.split(x, 1, 0)
             for j in range(0,4):
                 c += 1

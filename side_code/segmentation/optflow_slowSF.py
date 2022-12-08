@@ -20,10 +20,10 @@ def flow2img(flow, BGR=True):
 
 initials = "SS"
 
-path = r"E:\Eigene Dateien Jonathan\studium\6. Semester\Bachlor\HLE_Dataset" + "\\" + initials +r"\png"
-plica_vocalis = r"E:\Eigene Dateien Jonathan\studium\6. Semester\Bachlor\HLE_Dataset" + "\\" + initials + r"\Segmentation\plica_vocalis"
-glottis = r"E:\Eigene Dateien Jonathan\studium\6. Semester\Bachlor\HLE_Dataset" + "\\" + initials + r"\Segmentation\glottis"
-all_masks = r"E:\Eigene Dateien Jonathan\studium\6. Semester\Bachlor\HLE_Dataset" + "\\" + initials + r"\Segmentation\all_masks"
+path = r"_\HLE_Dataset" + "\\" + initials +r"\png"
+plica_vocalis = r"_\HLE_Dataset" + "\\" + initials + r"\Segmentation\plica_vocalis"
+glottis = r"_\HLE_Dataset" + "\\" + initials + r"\Segmentation\glottis"
+all_masks = r"_\HLE_Dataset" + "\\" + initials + r"\Segmentation\all_masks"
 images = os.listdir(path)
 flows = list()
 length = int((len(images)-2)/4)
