@@ -11,6 +11,7 @@ from PIL import Image, ImageFilter
 from torch import true_divide
 import math
 
+
 doppelt = True #sets 2 seed points instead of one
 
 def loadImages(path):
